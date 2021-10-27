@@ -1,7 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import Label, ttk
 import tkinter.font as tkFont
-from tkinter.constants import GROOVE, RIDGE, WORD
+from tkinter.constants import CENTER, GROOVE, NONE, RIDGE, WORD
 
 import json, random
 
@@ -26,6 +26,16 @@ def get_random_phrase(word_list, min_words=20, max_words=30):
     return phrase
 
 
+# Define a function to highlight the text
+def add_highlighter(text, qty):
+    text.tag_add("start", "1.11", "1.17")
+    text.tag_config("start", background="black", foreground="white")
+
+
+def gen_info_text(line1="hello", cpm=0, wpm=0):
+    return f"{line1}\nCharacters per minute: {cpm}         ||        Words per minute: {wpm}"
+
+
 window = tk.Tk()
 window.title("Typing speed test")
 window.config(padx=20, pady=20)
@@ -33,17 +43,18 @@ window.config(padx=20, pady=20)
 window.option_add("*tearOff", False)  # This is always a good idea
 
 # Make the app responsive
-# window.columnconfigure(index=0, weight=1)
-# window.columnconfigure(index=1, weight=1)
-# window.columnconfigure(index=2, weight=1)
+window.columnconfigure(index=0, weight=1)
+window.columnconfigure(index=1, weight=1)
+window.columnconfigure(index=2, weight=1)
 window.rowconfigure(index=0, weight=1)
 window.rowconfigure(index=1, weight=1)
 window.rowconfigure(index=2, weight=1)
 
 # Create a style
 style = ttk.Style(window)
-
-font_big_box = tkFont.Font(family=FONT_NAME, size=16)
+font_practice_box = tkFont.Font(family=FONT_NAME, size=16)
+font_title = tkFont.Font(family=FONT_NAME, size=20, weight="bold")
+font_info_box = tkFont.Font(family=FONT_NAME, size=12)
 
 # Import the tcl file
 window.tk.call("source", "project\\themes\\forest-light.tcl")
@@ -51,16 +62,51 @@ window.tk.call("source", "project\\themes\\forest-light.tcl")
 # Set the theme with the theme_use method
 style.theme_use("forest-light")
 
+# Title
+title_label = ttk.Label(window, text="Typing Speed Test 🏃‍♂️", foreground="#008a25")
+title_label.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
+title_label.configure(font=font_title, anchor=CENTER)
+
+
+# Create a frame for information to the user
+info_frame = ttk.LabelFrame(window, text="Info", padding=(10, 10))
+info_frame.grid(row=1, column=0, padx=10, pady=(20, 10), sticky="nsew")
+
+# Info Text
+info_text = tk.Text(
+    info_frame,
+    width=70,
+    height=2,
+    padx=5,
+    pady=5,
+    wrap=WORD,
+    highlightthickness=0,
+    borderwidth=0,
+)
+info_text.configure(font=font_info_box)
+info_text.config(spacing3=10)
+info_to_display = gen_info_text(
+    "Welcome to the typing speed test, it will start automatically when you begin typing, glhf!"
+)
+info_text.insert("1.0", info_to_display)
+info_text.grid(row=0, column=0)
+
+
+# Create a frame for practice text
+practice_frame = ttk.LabelFrame(window, text="Practice text", padding=(10, 10))
+practice_frame.grid(row=2, column=0, padx=10, pady=(10, 10), sticky="nsew")
+# Practice Text
 practice_text = tk.Text(
-    window,
+    practice_frame,
     width=50,
-    height=5,
+    height=4,
     padx=20,
     pady=15,
     wrap=WORD,
-    relief=GROOVE,
+    highlightthickness=0,
+    borderwidth=0,
 )
-practice_text.configure(font=font_big_box)
+practice_text.configure(font=font_practice_box)
 practice_text.config(spacing1=10, spacing2=10)
 practice_text.tag_configure("center", justify="center")
 rand_phrase = get_random_phrase(load_words())
@@ -68,11 +114,22 @@ practice_text.insert("1.0", rand_phrase)
 practice_text.tag_add("center", "1.0", "end")
 practice_text.grid(row=0, column=0)
 
-
+entry_label = ttk.Label(window, text="Type your text below:")
+entry_label.grid(row=3, column=0, padx=10, pady=2, sticky="nsew")
+entry_label.configure(font=font_info_box)
 # Entry
 entry = ttk.Entry(window)
 entry.insert(0, "")
-entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
+entry.grid(row=4, column=0, padx=10, pady=(8, 10), sticky="ew")
+
+# Accentbutton
+accentbutton = ttk.Button(
+    window,
+    text="Reset Typing Test",
+    style="Accent.TButton",
+    command=lambda: add_highlighter(practice_text, 3),
+)
+accentbutton.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
 # ###
 # # Panedwindow
 # paned = ttk.PanedWindow(window)
