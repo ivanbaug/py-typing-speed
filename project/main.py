@@ -10,6 +10,13 @@ FONT_NAME = "Helvetica"
 
 
 sample_text = "Cras varius ex ut cursus gravida. Curabitur vitae leo egestas, imperdiet nibh eget, finibus justo. Nulla et libero tortor. Integer gravida, nisl ac maximus ullamcorper, libero nisi maximus felis, eget feugiat leo orci vitae urna. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nullam enim ante, pellentesque in pharetra nec, maximus nec orci. Aliquam erat volutpat."
+my_index = 0
+
+
+class Window(tk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
 
 
 def load_words():
@@ -19,7 +26,7 @@ def load_words():
     return mlist
 
 
-def get_random_phrase(word_list, min_words=20, max_words=30):
+def get_random_phrase(word_list, min_words=15, max_words=25):
     words = random.choices(word_list, k=random.randint(min_words, max_words))
     phrase = " ".join(words)
     print(phrase)
@@ -28,12 +35,28 @@ def get_random_phrase(word_list, min_words=20, max_words=30):
 
 # Define a function to highlight the text
 def add_highlighter(text, qty):
-    text.tag_add("start", "1.11", "1.17")
+    text.tag_add("start", "1.11")
     text.tag_config("start", background="black", foreground="white")
+    print(text.index("end"))
+
+
+def highlight_char(text, index):
+    # Convert to a position
+    idx = f"1.0+{index}c"
+
+    text.tag_add("hl", index)
+    text.tag_config("hl", background="black", foreground="white")
 
 
 def gen_info_text(line1="hello", cpm=0, wpm=0):
     return f"{line1}\nCharacters per minute: {cpm}         ||        Words per minute: {wpm}"
+
+
+def keystroke(text):
+    # print(self.char)
+    global my_index
+    my_index += 1
+    highlight_char(text=text, index=my_index)
 
 
 window = tk.Tk()
@@ -63,7 +86,7 @@ window.tk.call("source", "project\\themes\\forest-light.tcl")
 style.theme_use("forest-light")
 
 # Title
-title_label = ttk.Label(window, text="Typing Speed Test 🏃‍♂️", foreground="#008a25")
+title_label = ttk.Label(window, text="Typing Speed Test", foreground="#008a25")
 title_label.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
 title_label.configure(font=font_title, anchor=CENTER)
 
@@ -120,6 +143,7 @@ entry_label.configure(font=font_info_box)
 # Entry
 entry = ttk.Entry(window)
 entry.insert(0, "")
+entry.bind("<Key>", lambda event, arg=(0): keystroke(practice_text))
 entry.grid(row=4, column=0, padx=10, pady=(8, 10), sticky="ew")
 
 # Accentbutton
@@ -130,33 +154,14 @@ accentbutton = ttk.Button(
     command=lambda: add_highlighter(practice_text, 3),
 )
 accentbutton.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
-# ###
-# # Panedwindow
-# paned = ttk.PanedWindow(window)
-# paned.grid(row=0, column=0, pady=(25, 5), sticky="nsew", rowspan=3)
 
-# # Pane #1
-# pane_1 = ttk.Frame(paned, borderwidth=1)
-# paned.add(pane_1, weight=1)
-# # # Create a Frame for the Text view
-# # treeFrame = ttk.Frame(pane_1)
-# # treeFrame.pack(expand=True, fill="both", padx=5, pady=5)
-# # Separator
-# # separator = ttk.Separator(window)
-# # separator.grid(row=1, column=0, padx=(20, 10), pady=10, sticky="ew")
-
-# greeting = tk.Label(pane_1, text="Hello, Tkinter", bg="blue")
-# greeting.pack()
-# # Pane #2
-# pane_2 = ttk.Frame(paned, borderwidth=1)
-# paned.add(pane_2, weight=1)
-
-# greeting2 = tk.Label(pane_2, text="Hello, Tkinter", bg="green")
-# greeting2.pack()
 
 window.mainloop()
 
-
+# if __name__ == "__main__":
+#     root = tk.Tk()
+#     Window(root).pack(side="top", fill="both", expand=True)
+#     root.mainloop()
 # Notes:
 # How to highlight text in a tkinter Text widget?  https://www.tutorialspoint.com/how-to-highlight-text-in-a-tkinter-text-widget
 
