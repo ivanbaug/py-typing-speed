@@ -1,9 +1,9 @@
 import tkinter as tk
 import tkinter.font as tkFont
-from tkinter import Label, ttk
+from tkinter import Label, ttk, messagebox
 from tkinter.constants import CENTER, END, GROOVE, NONE, RIDGE, WORD
 
-import json, random
+import json, random, time
 
 
 FONT_NAME = "Helvetica"
@@ -33,9 +33,16 @@ class Window(tk.Frame):
 
         # Initial Phrase
         self.word_list = self.load_words()
-        self.rand_phrase = self.get_random_phrase(self.word_list)
+        self.rand_phrase, self.word_num = self.get_random_phrase(self.word_list)
+        self.char_num = len(self.rand_phrase)
         self.tindex = 0
         self.welcome_str = "Welcome to the typing speed test, it will start automatically when you begin typing, glhf!"
+
+        # Timing vars
+        self.test_started = False
+        self.test_ended = False
+        self.t_start = time.perf_counter()
+        self.t_end = 1000
 
         # Title
         self.title_label = ttk.Label(
@@ -92,8 +99,9 @@ class Window(tk.Frame):
         self.entry_label = ttk.Label(self, text="Type your text below:")
         self.entry_label.grid(row=3, column=0, padx=10, pady=2, sticky="nsew")
         self.entry_label.configure(font=self.font_info_box)
+
         # Entry
-        self.entry = ttk.Entry(self)
+        self.entry = ttk.Entry(self, justify="center")
         self.entry.insert(0, "")
         self.entry.bind("<Key>", self.keystroke)
         self.entry.grid(row=4, column=0, padx=10, pady=(8, 10), sticky="ew")
@@ -126,23 +134,56 @@ class Window(tk.Frame):
         mlist = list(valid_words.keys())
         return mlist
 
-    def get_random_phrase(self, word_list, min_words=15, max_words=25):
+    def get_random_phrase(self, word_list, min_words=10, max_words=25):
         word_num = random.randint(min_words, max_words)
         words = random.choices(word_list, k=word_num)
         phrase = " ".join(words)
-        print(word_num)
-        print(phrase)
-        return phrase
+        # print(word_num)
+        # print(phrase)
+        return (phrase, word_num)
 
     def gen_info_text(self, line1="hello", cpm=0, wpm=0):
         return f"{line1}\nCharacters per minute: {cpm}         ||        Words per minute: {wpm}"
 
     def keystroke(self, key):
+        # If its the first character of the test start timing
+        if not self.test_started:
+            self.test_started = True
+            self.t_start = time.perf_counter()
+
+        # Compare if the character is the correct one
         current_char = self.practice_text.get(self.idx_to_position(self.tindex))
         key_pressed = key.char
+        self.limit_entry_chars()
+        msg = f"Try the following:{current_char}"
         if current_char == key_pressed:
             self.tindex += 1
             self.highlight_char(text=self.practice_text, index=self.tindex)
+            msg = "You're doing great!"
+
+        if not self.test_ended:
+            cpm = 0
+            if self.tindex > 1:
+                dt = time.perf_counter() - self.t_start
+                cps = float(self.tindex) / dt
+                cpm = int(cps * 60)
+
+            wpm = 0
+            # When the last character is typed correctly end the test
+            if self.tindex == self.char_num:
+                self.test_ended = True
+                self.practice_text.tag_delete("hl")
+                self.t_end = time.perf_counter()
+                dt = self.t_end - self.t_start
+                wps = float(self.word_num) / dt
+                wpm = int(wps * 60)
+                msg = "Well done! Your results:"
+
+            self.info_text.delete("1.0", END)
+            self.info_to_display = self.gen_info_text(msg, cpm, wpm)
+            if self.test_ended:
+                messagebox.showinfo("You made it!", self.info_to_display)
+            self.info_text.insert("1.0", self.info_to_display)
 
     def idx_to_position(self, index):
         return f"1.0+{index}c"
@@ -150,7 +191,7 @@ class Window(tk.Frame):
     def highlight_char(self, text, index):
         # turn previous character to normal color
         text.tag_delete("hl")
-
+        # highlight next char
         idx = self.idx_to_position(index)
         text.tag_add("hl", idx)
         text.tag_config("hl", background="black", foreground="white")
@@ -162,11 +203,21 @@ class Window(tk.Frame):
         self.info_text.insert("1.0", self.info_to_display)
 
         # reset practice text
-        self.rand_phrase = self.get_random_phrase(self.word_list, 2, 5)
+        self.rand_phrase, self.word_num = self.get_random_phrase(self.word_list)
+        self.char_num = len(self.rand_phrase)
         self.tindex = 0
         self.practice_text.delete("1.0", END)
         self.practice_text.insert("1.0", self.rand_phrase)
         self.practice_text.tag_add("center", "1.0", "end")
+
+        self.test_started = False
+        self.test_ended = False
+
+    def limit_entry_chars(self):
+        entry_txt = self.entry.get()
+        if len(entry_txt) > 14:
+            self.entry.delete(0, END)
+            self.entry.insert(0, entry_txt[len(entry_txt) - 14 :])
 
 
 # Define a function to highlight the text
